@@ -1,5 +1,4 @@
 /* eslint-disable react/prop-types */
-import EventEmitter from "events";
 import { DataObject } from "@fluidframework/aqueduct";
 import { IFluidHandle } from "@fluidframework/core-interfaces";
 import { SharedJson1 } from "@fluid-experimental/sharejs-json1";
@@ -8,6 +7,7 @@ import { IValueChanged, SharedMap } from "@fluidframework/map";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import ReactJson, { InteractionProps } from "react-json-view";
+import { Doc, IArray } from "./types";
 
 // import {produce} from "immer";
 
@@ -23,21 +23,7 @@ import ReactJson, { InteractionProps } from "react-json-view";
 //     },
 // };
 
-type Doc = string | number | boolean | Doc[];
-
 // type ArItem = string | number | boolean | Doc;
-
-interface IArray<T> extends EventEmitter {
-    readonly state: T[];
-    insert(index: number, content: T): T[];
-    push(content: T): number;
-    unshift(content: T): number;
-    delete(index: number, length?: number): T[];
-    get(index: number): T;
-    set(index: number, content: T): number;
-    length: number;
-    on(event: "arrayModified", listener: () => void): this;
-}
 
 const myArray = {
     array: [],
@@ -75,6 +61,7 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
         this._store = await this.root.get<IFluidHandle<SharedJson1>>("json1")?.get();
         this._store?.on("op", () => {
             this.render();
+            this.emit("arrayModified");
         });
         this.log();
 
@@ -204,7 +191,7 @@ export const UI: React.FC<IProps> = (props) => {
                 src={props.dataObject.state}
                 theme="flat"
                 enableClipboard={false}
-                displayObjectSize={false}
+                displayObjectSize={true}
                 onAdd={onAdd}
                 onDelete={onDelete}
                 onEdit={onEdit}
