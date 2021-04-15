@@ -43,7 +43,8 @@
     "immer": "^9.0.1",
     "office-ui-fabric-react": "^7.28.1",
     "react": "^16.10.2",
-    "react-dom": "^16.10.2"
+    "react-dom": "^16.10.2",
+    "react-json-view": "^1.21.3"
   },
   "devDependencies": {
     "@fluidframework/build-common": "^0.21.0-0",
