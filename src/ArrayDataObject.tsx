@@ -25,9 +25,9 @@ import { Doc, IArray } from "./types";
 
 // type ArItem = string | number | boolean | Doc;
 
-const myArray = {
-    array: [],
-};
+// const myArray = {
+//     array: [],
+// };
 
 export class ArrayDataObject<T extends Doc> extends DataObject implements IArray<T>, IFluidHTMLView {
     // [x: string]: any;
@@ -48,9 +48,9 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     private _elm!: HTMLElement;
     protected async initializingFirstTime() {
         const newState = SharedJson1.create(this.runtime);
-        const initialData = JSON.parse(JSON.stringify(myArray));
+        // const initialData = JSON.parse(JSON.stringify(myArray));
 
-        newState.replace([], true, initialData.array);
+        newState.replace([], true, []);
         this.root.set("json1", newState.handle);
 
         const map = SharedMap.create(this.runtime);
@@ -119,6 +119,11 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
         this._store?.replace([index], true, content);
         return this.length;
     }
+
+    clear(): void {
+        this._store?.replace([], true, []);
+    }
+
     public get length(): number {
         return this.state.length;
     }
@@ -138,7 +143,7 @@ const randomInt = (min: number, max: number): number => {
 
 export const UI: React.FC<IProps> = (props) => {
     const push = (dataobj: ArrayDataObject<any>) => {
-        dataobj.push(dataobj.length + 1);
+        dataobj.push(dataobj.length);
         dataobj.log();
     };
 
@@ -186,6 +191,7 @@ export const UI: React.FC<IProps> = (props) => {
             <button onClick={(event) => unshift(props.dataObject)}>Unshift</button>
             <button onClick={(event) => remove(props.dataObject)}>Delete</button>
             <button onClick={(event) => insert(props.dataObject)}>Insert</button>
+            <button onClick={(event) => props.dataObject.clear()}>Clear</button>
             <button onClick={(event) => props.dataObject.log()}>Log</button>
             <ReactJson
                 src={props.dataObject.state}

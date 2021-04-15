@@ -10,6 +10,7 @@ export interface IArray<T> extends EventEmitter {
     delete(index: number, length?: number): T[];
     get(index: number): T;
     set(index: number, content: T): number;
+    clear(): void;
     length: number;
     on(event: "arrayModified", listener: () => void): this;
 }
