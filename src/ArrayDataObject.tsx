@@ -7,7 +7,7 @@ import { IFluidHTMLOptions, IFluidHTMLView } from "@fluidframework/view-interfac
 import { IValueChanged, SharedMap } from "@fluidframework/map";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
-import ReactJson from "react-json-view";
+import ReactJson, { InteractionProps } from "react-json-view";
 
 // import {produce} from "immer";
 
@@ -34,6 +34,7 @@ interface IArray<T> extends EventEmitter {
     unshift(content: T): number;
     delete(index: number, length?: number): T[];
     get(index: number): T;
+    set(index: number, content: T): number;
     length: number;
     on(event: "arrayModified", listener: () => void): this;
 }
@@ -126,6 +127,11 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     get(index: number): T {
         return this.state[index];
     }
+
+    set(index: number, content: T): number {
+        this._store?.replace([index], true, content);
+        return this.length;
+    }
     public get length(): number {
         return this.state.length;
     }
@@ -144,9 +150,6 @@ const randomInt = (min: number, max: number): number => {
 };
 
 export const UI: React.FC<IProps> = (props) => {
-    // for(let i = 0; i < props.numButtons; i++) {
-    // }
-
     const push = (dataobj: ArrayDataObject<any>) => {
         dataobj.push(dataobj.length + 1);
         dataobj.log();
@@ -167,6 +170,29 @@ export const UI: React.FC<IProps> = (props) => {
         dataobj.log();
     };
 
+    const onAdd = (add: InteractionProps) => {
+        console.log(`onAdd`);
+        const index = (add.existing_value as any[]).length;
+        props.dataObject.insert(index, (add.new_value as any[])[index]);
+        console.log(add);
+    };
+
+    const onDelete = (add: InteractionProps) => {
+        console.log(`onDelete`);
+        if (add.name) {
+            props.dataObject.delete(parseInt(add.name, 10));
+        }
+        console.log(add);
+    };
+
+    const onEdit = (add: InteractionProps) => {
+        console.log(`onEdit`);
+        if (add.name) {
+            props.dataObject.set(parseInt(add.name, 10), add.new_value);
+        }
+        console.log(add);
+    };
+
     return (
         <div>
             <button onClick={(event) => push(props.dataObject)}>Push</button>
@@ -179,6 +205,9 @@ export const UI: React.FC<IProps> = (props) => {
                 theme="flat"
                 enableClipboard={false}
                 displayObjectSize={false}
+                onAdd={onAdd}
+                onDelete={onDelete}
+                onEdit={onEdit}
             />
         </div>
     );
