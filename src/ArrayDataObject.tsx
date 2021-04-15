@@ -1,9 +1,10 @@
 /* eslint-disable react/prop-types */
+import EventEmitter from "events";
 import { DataObject } from "@fluidframework/aqueduct";
 import { IFluidHandle } from "@fluidframework/core-interfaces";
 import { SharedJson1 } from "@fluid-experimental/sharejs-json1";
 import { IFluidHTMLOptions, IFluidHTMLView } from "@fluidframework/view-interfaces";
-import { SharedMap } from "@fluidframework/map";
+import { IValueChanged, SharedMap } from "@fluidframework/map";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import ReactJson from "react-json-view";
@@ -24,23 +25,25 @@ import ReactJson from "react-json-view";
 
 type Doc = string | number | boolean | Doc[];
 
-type ArItem = string | number | boolean | Doc;
+// type ArItem = string | number | boolean | Doc;
 
-interface IArray {
-    insert(index: number, content: ArItem): ArItem[];
-    push(content: ArItem): number;
-    unshift(content: ArItem): number;
-    delete(index: number, length?: number): ArItem[];
-    get(index: number): ArItem;
+interface IArray<T> extends EventEmitter {
+    readonly state: T[];
+    insert(index: number, content: T): T[];
+    push(content: T): number;
+    unshift(content: T): number;
+    delete(index: number, length?: number): T[];
+    get(index: number): T;
     length: number;
-
+    on(event: "arrayModified", listener: () => void): this;
 }
 
 const myArray = {
-    array: [0, 1, 2],
+    array: [],
 };
 
-export class ArrayDataObject<T extends Doc> extends DataObject implements IArray, IFluidHTMLView {
+export class ArrayDataObject<T extends Doc> extends DataObject implements IArray<T>, IFluidHTMLView {
+    // [x: string]: any;
     public get state(): T[] {
         if (this._store) {
             return this._store.get() as T[];
@@ -55,6 +58,7 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
 
     private _store: SharedJson1 | undefined;
     private _map: SharedMap | undefined;
+    private _elm!: HTMLElement;
     protected async initializingFirstTime() {
         const newState = SharedJson1.create(this.runtime);
         const initialData = JSON.parse(JSON.stringify(myArray));
@@ -68,40 +72,58 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
 
     protected async hasInitialized() {
         this._store = await this.root.get<IFluidHandle<SharedJson1>>("json1")?.get();
+        this._store?.on("op", () => {
+            this.render();
+        });
         this.log();
 
         this._map = await this.root.get<IFluidHandle<SharedMap>>("map")?.get();
         console.log(this._map?.handle);
+
+        this.root.on("valueChanged", (changed: IValueChanged) => {
+            console.log(changed);
+            this.render();
+        });
     }
 
-    public render(elm: HTMLElement, options?: IFluidHTMLOptions): void {
+    public render(elm?: HTMLElement, options?: IFluidHTMLOptions): void {
+        if (!this._elm) {
+            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+            this._elm = elm!;
+        }
+
+        if (!elm) {
+            // eslint-disable-next-line no-param-reassign
+            elm = this._elm;
+        }
+
         this.log();
         ReactDOM.render(
             <>
-                <UI numButtons={2} do={this} />
+                <UI dataObject={this} />
             </>,
             elm,
         );
     }
 
     // IArray implementation
-    insert(index: number, content: ArItem): ArItem[] {
+    insert(index: number, content: T): T[] {
         this._store?.insert([index], content);
         return Array.from(this.state);
     }
-    push(content: ArItem): number {
-        this._store?.insert(["-"], content);
+    push(content: T): number {
+        this._store?.insert([this.length], content);
         return this.length;
     }
-    unshift(content: ArItem): number {
+    unshift(content: T): number {
         this._store?.insert([0], content);
         return this.length;
     }
-    delete(index: number, length?: number): ArItem[] {
+    delete(index: number, length?: number): T[] {
         this._store?.remove([index]);
         return Array.from(this.state);
     }
-    get(index: number): ArItem {
+    get(index: number): T {
         return this.state[index];
     }
     public get length(): number {
@@ -110,8 +132,7 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
 }
 
 interface IProps {
-    numButtons: number,
-    do: ArrayDataObject<any>,
+    dataObject: ArrayDataObject<any>,
 }
 
 const randomInt = (min: number, max: number): number => {
@@ -148,12 +169,17 @@ export const UI: React.FC<IProps> = (props) => {
 
     return (
         <div>
-            <ReactJson src={props.do.state} theme="hopscotch" />
-            <button onClick={(event) => push(props.do)}>Push</button>
-            <button onClick={(event) => unshift(props.do)}>Unshift</button>
-            <button onClick={(event) => remove(props.do)}>Delete</button>
-            <button onClick={(event) => insert(props.do)}>Insert</button>
-            <button onClick={(event) => props.do.log()}>Log</button>
+            <button onClick={(event) => push(props.dataObject)}>Push</button>
+            <button onClick={(event) => unshift(props.dataObject)}>Unshift</button>
+            <button onClick={(event) => remove(props.dataObject)}>Delete</button>
+            <button onClick={(event) => insert(props.dataObject)}>Insert</button>
+            <button onClick={(event) => props.dataObject.log()}>Log</button>
+            <ReactJson
+                src={props.dataObject.state}
+                theme="flat"
+                enableClipboard={false}
+                displayObjectSize={false}
+            />
         </div>
     );
 };
