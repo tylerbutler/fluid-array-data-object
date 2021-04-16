@@ -1,37 +1,19 @@
 /* eslint-disable react/prop-types */
+import { SharedJson1 } from "@fluid-experimental/sharejs-json1";
 import { DataObject } from "@fluidframework/aqueduct";
 import { IFluidHandle } from "@fluidframework/core-interfaces";
-import { SharedJson1 } from "@fluid-experimental/sharejs-json1";
-import { IFluidHTMLOptions, IFluidHTMLView } from "@fluidframework/view-interfaces";
 import { IValueChanged, SharedMap } from "@fluidframework/map";
+import { IFluidHTMLOptions, IFluidHTMLView } from "@fluidframework/view-interfaces";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import ReactJson, { InteractionProps } from "react-json-view";
 import { Doc, IArray } from "./types";
 
-// import {produce} from "immer";
-
-// import { Doc, type as Json1OTType, JSONOp, replaceOp, insertOp, moveOp, removeOp, Path } from "ot-json1";
-
-// const myJson = {
-//     a: "topLevel",
-//     b: {
-//         b1: "nested 1 level",
-//         b2: {
-//             b22: "nested 2 levels",
-//         },
-//     },
-// };
-
-// type ArItem = string | number | boolean | Doc;
-
-// const myArray = {
-//     array: [],
-// };
-
 export class ArrayDataObject<T extends Doc> extends DataObject implements IArray<T>, IFluidHTMLView {
-    // [x: string]: any;
-    public get state(): T[] {
+    /**
+     * {@inheritDoc IArray.state}
+     */
+     public get state(): T[] {
         if (this._store) {
             return this._store.get() as T[];
         }
@@ -74,6 +56,7 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     }
 
     public render(elm?: HTMLElement, options?: IFluidHTMLOptions): void {
+        // TODO: Clean this up because it's a mess.
         if (!this._elm) {
             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             this._elm = elm!;
@@ -94,36 +77,63 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     }
 
     // IArray implementation
-    insert(index: number, content: T): T[] {
+    /**
+     * {@inheritDoc IArray.insert}
+     */
+    insert(index: number, content: T): readonly T[] {
         this._store?.insert([index], content);
         return Array.from(this.state);
     }
-    push(content: T): number {
+    /**
+     * {@inheritDoc IArray.push}
+     */
+     push(content: T): number {
         this._store?.insert([this.length], content);
         return this.length;
     }
-    unshift(content: T): number {
+    /**
+     * {@inheritDoc IArray.unshift}
+     */
+     unshift(content: T): number {
         this._store?.insert([0], content);
         return this.length;
     }
-    delete(index: number, length?: number): T[] {
+    /**
+     * {@inheritDoc IArray.delete}
+     */
+     delete(index: number): readonly T[] {
         this._store?.remove([index]);
         return Array.from(this.state);
     }
-    get(index: number): T {
+    /**
+     * {@inheritDoc IArray.get}
+     */
+     get(index: number): T | undefined {
+        if(index >= this.length) {
+            return undefined;
+        }
         return this.state[index];
     }
 
-    set(index: number, content: T): number {
+    /**
+     * {@inheritDoc IArray.set}
+     */
+     set(index: number, content: T): number {
         this._store?.replace([index], true, content);
         return this.length;
     }
 
-    clear(): void {
+    /**
+     * {@inheritDoc IArray.clear}
+     */
+     clear(): void {
         this._store?.replace([], true, []);
     }
 
-    public get length(): number {
+    /**
+     * {@inheritDoc IArray.length}
+     */
+     public get length(): number {
         return this.state.length;
     }
 }
