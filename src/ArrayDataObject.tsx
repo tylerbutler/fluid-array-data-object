@@ -7,6 +7,7 @@ import { IFluidHTMLOptions, IFluidHTMLView } from "@fluidframework/view-interfac
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import ReactJson, { InteractionProps } from "react-json-view";
+import negativeArray from "negative-array";
 import { Doc, IArray } from "./types";
 
 export class ArrayDataObject<T extends Doc> extends DataObject implements IArray<T>, IFluidHTMLView {
@@ -111,6 +112,10 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
      get(index: number): T | undefined {
         if(index >= this.length) {
             return undefined;
+        }
+
+        if(index < 0) {
+            return negativeArray(this.state)[index];
         }
         return this.state[index];
     }
