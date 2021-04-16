@@ -69,7 +69,6 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
         console.log(this._map?.handle);
 
         this.root.on("valueChanged", (changed: IValueChanged) => {
-            console.log(changed);
             this.render();
         });
     }

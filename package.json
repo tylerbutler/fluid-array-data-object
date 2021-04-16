@@ -1,6 +1,6 @@
 {
-  "name": "fluid-array-data-object",
-  "version": "0.38.0",
+  "name": "@tylerbu/fluid-array-data-object",
+  "version": "0.38.0-tylerbu1",
   "description": "",
   "main": "dist/index.js",
   "module": "lib/index.js",
