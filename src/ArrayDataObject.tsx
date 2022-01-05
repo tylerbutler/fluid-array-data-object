@@ -6,18 +6,19 @@ import { IFluidHTMLOptions, IFluidHTMLView } from "@fluidframework/view-interfac
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import negativeArray from "negative-array";
-import { Doc, IArray } from "./types";
+import { DocArray, IArray } from "./types";
 import { UI } from "./ui";
 
-export class ArrayDataObject<T extends Doc> extends DataObject implements IArray<T>, IFluidHTMLView {
+export class ArrayDataObject<T extends ArrayLike<T>> extends DataObject
+    implements IArray<T>, IFluidHTMLView {
     /**
      * {@inheritDoc IArray.state}
      */
-     public get state(): T[] {
+    public get state(): T {
         if (this._store) {
-            return this._store.get() as T[];
+            return this._store.get() as T;
         }
-        return [];
+        return [] as T;
     }
 
     public log(): void {
@@ -26,7 +27,8 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     public get IFluidHTMLView() { return this; }
 
     private _store: SharedJson1 | undefined;
-    private _map: SharedMap | undefined;
+    private _mutableInternal: T | undefined;
+    // private _map: SharedMap | undefined;
     private _elm!: HTMLElement;
     protected async initializingFirstTime() {
         const newStore = SharedJson1.create(this.runtime);
@@ -46,9 +48,6 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
             this.emit("arrayModified");
         });
         this.log();
-
-        this._map = await this.root.get<IFluidHandle<SharedMap>>("map")?.get();
-        console.log(this._map?.handle);
 
         this.root.on("valueChanged", (changed: IValueChanged) => {
             this.render();
@@ -87,33 +86,33 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     /**
      * {@inheritDoc IArray.push}
      */
-     push(content: T): number {
+    push(content: T): number {
         this._store?.insert([this.length], content);
         return this.length;
     }
     /**
      * {@inheritDoc IArray.unshift}
      */
-     unshift(content: T): number {
+    unshift(content: T): number {
         this._store?.insert([0], content);
         return this.length;
     }
     /**
      * {@inheritDoc IArray.delete}
      */
-     delete(index: number): readonly T[] {
+    delete(index: number): readonly T[] {
         this._store?.remove([index]);
         return Array.from(this.state);
     }
     /**
      * {@inheritDoc IArray.get}
      */
-     get(index: number): T | undefined {
-        if(index >= this.length) {
+    get(index: number): T | undefined {
+        if (index >= this.length) {
             return undefined;
         }
 
-        if(index < 0) {
+        if (index < 0) {
             return negativeArray(this.state)[index];
         }
         return this.state[index];
@@ -122,7 +121,7 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     /**
      * {@inheritDoc IArray.set}
      */
-     set(index: number, content: T): number {
+    set(index: number, content: T): number {
         this._store?.replace([index], true, content);
         return this.length;
     }
@@ -130,14 +129,14 @@ export class ArrayDataObject<T extends Doc> extends DataObject implements IArray
     /**
      * {@inheritDoc IArray.clear}
      */
-     clear(): void {
+    clear(): void {
         this._store?.replace([], true, []);
     }
 
     /**
      * {@inheritDoc IArray.length}
      */
-     public get length(): number {
+    public get length(): number {
         return this.state.length;
     }
 }

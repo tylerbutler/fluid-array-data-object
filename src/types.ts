@@ -3,6 +3,8 @@ import EventEmitter from "events";
 // from ot-json1
 export type Doc = string | number | boolean | Doc[];
 
+export type DocArray = Doc & ArrayLike<T>;
+
 export interface IArray<T> extends EventEmitter {
     /**
      * Returns the current array. Callers should treat the returned value as immutable.
@@ -80,4 +82,8 @@ export interface IArray<T> extends EventEmitter {
      * @alpha
      */
     on(event: "arrayModified", listener: () => void): this;
+}
+
+export interface IFountain<T> {
+    update(updateFunc: (mutable: T) => T): T;
 }
